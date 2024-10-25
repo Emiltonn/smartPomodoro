@@ -1,0 +1,679 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Matriz de Eisenhower com Técnica Pomodoro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1em 0;
+            text-align: center;
+        }
+        .container {
+            padding: 20px;
+        }
+        .form-section, .matrix-section, .pomodoro-section, .active-pomodoro-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .form-section h2, .matrix-section h2, .pomodoro-section h2, .active-pomodoro-section h2 {
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"], textarea, select, input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .matrix {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .quadrant {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        /* Cores para cada quadrante */
+        #Q1 {
+            border-left: 5px solid #e74c3c; /* Vermelho para Urgente e Importante */
+        }
+        #Q2 {
+            border-left: 5px solid #f1c40f; /* Amarelo para Importante, mas Não Urgente */
+        }
+        #Q3 {
+            border-left: 5px solid #3498db; /* Azul para Urgente, mas Não Importante */
+        }
+        #Q4 {
+            border-left: 5px solid #95a5a6; /* Cinza para Nem Urgente nem Importante */
+        }
+        .quadrant h3 {
+            margin-top: 0;
+            text-align: center;
+            background-color: #e0e0e0;
+            padding: 5px 0;
+            border-radius: 3px;
+        }
+        .task, .active-pomodoro {
+            background-color: #fff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .task h4, .active-pomodoro h4 {
+            margin: 0 0 5px 0;
+        }
+        .task p, .active-pomodoro p {
+            margin: 0 0 5px 0;
+            font-size: 0.9em;
+        }
+        .task button, .active-pomodoro button {
+            background-color: #2196F3;
+            margin-top: 5px;
+        }
+        .active-pomodoro button {
+            background-color: #e74c3c;
+        }
+        .task button:hover {
+            background-color: #0b7dda;
+        }
+        .active-pomodoro button:hover {
+            background-color: #c0392b;
+        }
+        /* Pomodoro Styles */
+        .pomodoro-timer {
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        .pomodoro-buttons button {
+            margin: 5px;
+        }
+        .pomodoro-setup {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .pomodoro-setup input {
+            width: 60px;
+        }
+        .total-time {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .status {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        /* Lista de Pomodoros Ativos */
+        .active-pomodoro-section {
+            display: none; /* Inicialmente escondido */
+        }
+        .active-pomodoro-section.visible {
+            display: block;
+        }
+        .cycle-info {
+            font-weight: bold;
+        }
+        /* Responsivo */
+        @media (max-width: 768px) {
+            .matrix {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Matriz de Eisenhower com Técnica Pomodoro</h1>
+    </header>
+    <div class="container">
+        <!-- Formulário de Cadastro de Tarefas -->
+        <div class="form-section">
+            <h2>Cadastrar Nova Tarefa</h2>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="title">Título da Tarefa:</label>
+                    <input type="text" id="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Descrição:</label>
+                    <textarea id="description" rows="3" required></textarea>
+                </div>
+                <!-- Definição de Pomodoros -->
+                <div class="form-group">
+                    <label for="pomodoros">Número de Pomodoros (25 min cada):</label>
+                    <div class="pomodoro-setup">
+                        <button type="button" id="decrease-pomodoros">-</button>
+                        <input type="number" id="pomodoros" min="1" value="1" required>
+                        <button type="button" id="increase-pomodoros">+</button>
+                    </div>
+                    <div class="total-time" id="total-time">Tempo Estimado: 30 minutos</div>
+                </div>
+                <div class="form-group">
+                    <label for="quadrant">Quadrante da Matriz de Eisenhower:</label>
+                    <select id="quadrant" required>
+                        <option value="">Selecione</option>
+                        <option value="Q1">1. Urgente e Importante</option>
+                        <option value="Q2">2. Importante, mas Não Urgente</option>
+                        <option value="Q3">3. Urgente, mas Não Importante</option>
+                        <option value="Q4">4. Nem Urgente nem Importante</option>
+                    </select>
+                </div>
+                <button type="submit">Adicionar Tarefa</button>
+            </form>
+        </div>
+
+        <!-- Matriz de Eisenhower -->
+        <div class="matrix-section">
+            <h2>Matriz de Eisenhower</h2>
+            <div class="matrix">
+                <div class="quadrant" id="Q1">
+                    <h3>1. Urgente e Importante</h3>
+                    <!-- Tarefas Q1 -->
+                </div>
+                <div class="quadrant" id="Q2">
+                    <h3>2. Importante, mas Não Urgente</h3>
+                    <!-- Tarefas Q2 -->
+                </div>
+                <div class="quadrant" id="Q3">
+                    <h3>3. Urgente, mas Não Importante</h3>
+                    <!-- Tarefas Q3 -->
+                </div>
+                <div class="quadrant" id="Q4">
+                    <h3>4. Nem Urgente nem Importante</h3>
+                    <!-- Tarefas Q4 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Pomodoros Ativos -->
+        <div class="active-pomodoro-section" id="active-pomodoro-section">
+            <h2>Pomodoros Ativos</h2>
+            <!-- Pomodoros Ativos -->
+        </div>
+
+        <!-- Pomodoro Timer -->
+        <div class="pomodoro-section">
+            <h2>Técnica Pomodoro</h2>
+            <div class="pomodoro-timer" id="timer">00:00</div>
+            <div class="pomodoro-buttons">
+                <button id="start-btn">Iniciar</button>
+                <button id="pause-btn">Pausar</button>
+                <button id="reset-btn">Resetar</button>
+            </div>
+            <div class="status" id="status">Status: Inativo</div>
+        </div>
+
+        <!-- Elemento de Áudio para Notificação -->
+        <audio id="notification-sound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3" preload="auto"></audio>
+    </div>
+
+    <script>
+        // Seletores
+        const taskForm = document.getElementById('task-form');
+        const titleInput = document.getElementById('title');
+        const descriptionInput = document.getElementById('description');
+        const pomodorosInput = document.getElementById('pomodoros');
+        const decreasePomodorosBtn = document.getElementById('decrease-pomodoros');
+        const increasePomodorosBtn = document.getElementById('increase-pomodoros');
+        const totalTimeDisplay = document.getElementById('total-time');
+        const quadrantSelect = document.getElementById('quadrant');
+
+        const Q1 = document.getElementById('Q1');
+        const Q2 = document.getElementById('Q2');
+        const Q3 = document.getElementById('Q3');
+        const Q4 = document.getElementById('Q4');
+
+        const timerDisplay = document.getElementById('timer');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const statusDisplay = document.getElementById('status');
+
+        const activePomodoroSection = document.getElementById('active-pomodoro-section');
+        const notificationSound = document.getElementById('notification-sound');
+
+        let tasks = [];
+        let activePomodoros = [];
+        let timer;
+        let isRunning = false;
+        let currentPomodoro = null; // Objeto Pomodoro atual
+        let currentPhase = 'Idle'; // 'Pomodoro', 'Short Break', 'Long Break'
+        let pomodorosCompleted = 0; // Total Pomodoros completados
+
+        // Configurações do Pomodoro (carregadas do localStorage ou padrão)
+        let pomodoroConfig = {
+            pomodoroDuration: 25, // minutos
+            shortBreak: 5, // minutos
+            longBreak: 15, // minutos
+            pomodorosBeforeLongBreak: 4
+        };
+
+        // Inicializar configurações do Pomodoro
+        function initializePomodoroConfig() {
+            const savedConfig = localStorage.getItem('pomodoroConfig');
+            if (savedConfig) {
+                pomodoroConfig = JSON.parse(savedConfig);
+            } else {
+                localStorage.setItem('pomodoroConfig', JSON.stringify(pomodoroConfig));
+            }
+        }
+
+        // Atualizar tempo total estimado no formulário
+        function updateTotalTime() {
+            const pomodoros = parseInt(pomodorosInput.value) || 1;
+            const totalMinutes = calculateTotalTime(pomodoros);
+            totalTimeDisplay.textContent = `Tempo Estimado: ${totalMinutes} minutos`;
+        }
+
+        // Calcular tempo total considerando pausas
+        function calculateTotalTime(pomodoros) {
+            const longBreaks = Math.floor(pomodoros / pomodoroConfig.pomodorosBeforeLongBreak);
+            const shortBreaks = pomodoros - longBreaks;
+            return pomodoros * pomodoroConfig.pomodoroDuration + shortBreaks * pomodoroConfig.shortBreak + longBreaks * pomodoroConfig.longBreak;
+        }
+
+        // Ajustar quantidade de Pomodoros
+        decreasePomodorosBtn.addEventListener('click', function() {
+            let current = parseInt(pomodorosInput.value) || 1;
+            if (current > 1) {
+                pomodorosInput.value = current - 1;
+                updateTotalTime();
+            }
+        });
+
+        increasePomodorosBtn.addEventListener('click', function() {
+            let current = parseInt(pomodorosInput.value) || 1;
+            pomodorosInput.value = current + 1;
+            updateTotalTime();
+        });
+
+        pomodorosInput.addEventListener('input', updateTotalTime);
+
+        // Carregar tarefas e Pomodoros do localStorage
+        window.onload = function() {
+            initializePomodoroConfig();
+            if (localStorage.getItem('tasks')) {
+                tasks = JSON.parse(localStorage.getItem('tasks'));
+                renderTasks();
+            }
+            if (localStorage.getItem('activePomodoros')) {
+                activePomodoros = JSON.parse(localStorage.getItem('activePomodoros'));
+                renderActivePomodoros();
+            }
+            updateTimerDisplay();
+            updateTotalTime();
+        };
+
+        // Adicionar Tarefa
+        taskForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const task = {
+                id: Date.now(),
+                title: titleInput.value,
+                description: descriptionInput.value,
+                pomodoros: parseInt(pomodorosInput.value) || 1,
+                pomodorosCompleted: 0,
+                quadrant: quadrantSelect.value,
+                status: 'Pendente'
+            };
+            tasks.push(task);
+            saveTasks();
+            renderTasks();
+            taskForm.reset();
+            updateTotalTime();
+            // Resetar pomodoros
+            pomodorosInput.value = 1;
+            updateTotalTime();
+        });
+
+        // Salvar tarefas e Pomodoros no localStorage
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function saveActivePomodoros() {
+            localStorage.setItem('activePomodoros', JSON.stringify(activePomodoros));
+        }
+
+        // Renderizar Tarefas na Matriz
+        function renderTasks() {
+            // Limpar quadrantes
+            Q1.innerHTML = '<h3>1. Urgente e Importante</h3>';
+            Q2.innerHTML = '<h3>2. Importante, mas Não Urgente</h3>';
+            Q3.innerHTML = '<h3>3. Urgente, mas Não Importante</h3>';
+            Q4.innerHTML = '<h3>4. Nem Urgente nem Importante</h3>';
+
+            tasks.forEach(task => {
+                if (task.status === 'Pendente') {
+                    const taskDiv = document.createElement('div');
+                    taskDiv.classList.add('task');
+                    const estimatedTime = calculateTotalTime(task.pomodoros);
+                    taskDiv.innerHTML = `
+                        <h4>${task.title}</h4>
+                        <p><strong>Descrição:</strong> ${task.description}</p>
+                        <p><strong>Pomodoros:</strong> ${task.pomodoros}</p>
+                        <p><strong>Tempo Estimado:</strong> ${estimatedTime} minutos</p>
+                        <p><strong>Status:</strong> ${task.status}</p>
+                        <button onclick="startPomodoro(${task.id})">Iniciar Pomodoro</button>
+                    `;
+                    switch(task.quadrant) {
+                        case 'Q1':
+                            Q1.appendChild(taskDiv);
+                            break;
+                        case 'Q2':
+                            Q2.appendChild(taskDiv);
+                            break;
+                        case 'Q3':
+                            Q3.appendChild(taskDiv);
+                            break;
+                        case 'Q4':
+                            Q4.appendChild(taskDiv);
+                            break;
+                    }
+                }
+            });
+        }
+
+        // Renderizar Pomodoros Ativos
+        function renderActivePomodoros() {
+            activePomodoroSection.innerHTML = '<h2>Pomodoros Ativos</h2>';
+            activePomodoros.forEach(pomodoro => {
+                const pomodoroDiv = document.createElement('div');
+                pomodoroDiv.classList.add('active-pomodoro');
+                const estimatedFinish = calculateEstimatedFinish(pomodoro);
+                pomodoroDiv.innerHTML = `
+                    <h4>${pomodoro.task.title}</h4>
+                    <p><strong>Descrição:</strong> ${pomodoro.task.description}</p>
+                    <p class="cycle-info">Pomodoros Completados: ${pomodoro.pomodorosCompleted} / ${pomodoro.task.pomodoros}</p>
+                    <p><strong>Estimada Finalização:</strong> ${estimatedFinish}</p>
+                    <button onclick="cancelPomodoro(${pomodoro.id})">Cancelar Pomodoro</button>
+                `;
+                activePomodoroSection.appendChild(pomodoroDiv);
+            });
+            if (activePomodoros.length > 0) {
+                activePomodoroSection.classList.add('visible');
+            } else {
+                activePomodoroSection.classList.remove('visible');
+            }
+        }
+
+        // Calcular horário estimado de finalização
+        function calculateEstimatedFinish(pomodoro) {
+            const currentTime = new Date();
+            const totalMinutes = calculateTotalTime(pomodoro.task.pomodoros);
+            const finishTime = new Date(currentTime.getTime() + totalMinutes * 60000);
+            return finishTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Técnica Pomodoro com Pausas e Lista de Pomodoros Ativos
+        function startPomodoro(taskId) {
+            if (isRunning) {
+                alert('Um Pomodoro já está em andamento. Por favor, pause ou resete o temporizador antes de iniciar outro.');
+                return;
+            }
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                // Remover a tarefa da Matriz e adicionar à lista de Pomodoros Ativos
+                task.status = 'Em Andamento';
+                const pomodoro = {
+                    id: Date.now(),
+                    taskId: task.id,
+                    task: task,
+                    pomodorosCompleted: task.pomodorosCompleted,
+                    pomodorosTotal: task.pomodoros
+                };
+                activePomodoros.push(pomodoro);
+                saveActivePomodoros();
+                saveTasks();
+                renderTasks();
+                renderActivePomodoros();
+                currentPomodoro = pomodoro;
+                pomodorosCompleted = pomodoro.pomodorosCompleted;
+                startPhase('Pomodoro');
+            }
+        }
+
+        // Cancelar Pomodoro
+        function cancelPomodoro(pomodoroId) {
+            if (isRunning) {
+                clearInterval(timer);
+                isRunning = false;
+            }
+            const pomodoroIndex = activePomodoros.findIndex(p => p.id === pomodoroId);
+            if (pomodoroIndex !== -1) {
+                const pomodoro = activePomodoros[pomodoroIndex];
+                // Resetar status da tarefa
+                const task = tasks.find(t => t.id === pomodoro.taskId);
+                if (task) {
+                    task.status = 'Pendente';
+                }
+                // Remover pomodoro da lista
+                activePomodoros.splice(pomodoroIndex, 1);
+                saveActivePomodoros();
+                saveTasks();
+                renderTasks();
+                renderActivePomodoros();
+                // Resetar temporizador
+                resetPomodoroTimer();
+            }
+        }
+
+        // Técnica Pomodoro com Pausas
+        function startPhase(phase) {
+            currentPhase = phase;
+            let duration;
+            if (phase === 'Pomodoro') {
+                duration = pomodoroConfig.pomodoroDuration;
+                statusDisplay.textContent = 'Status: Pomodoro';
+            } else if (phase === 'Short Break') {
+                duration = pomodoroConfig.shortBreak;
+                statusDisplay.textContent = 'Status: Pausa Curta';
+            } else if (phase === 'Long Break') {
+                duration = pomodoroConfig.longBreak;
+                statusDisplay.textContent = 'Status: Pausa Longa';
+            }
+
+            timeLeft = duration * 60;
+            updateTimerDisplay();
+
+            timer = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    notificationSound.play();
+                    if (currentPhase === 'Pomodoro') {
+                        // Incrementar contador de Pomodoros completados
+                        pomodorosCompleted++;
+                        const pomodoro = activePomodoros.find(p => p.id === currentPomodoro.id);
+                        if (pomodoro) {
+                            pomodoro.pomodorosCompleted = pomodorosCompleted;
+                            saveActivePomodoros();
+                            saveTasks();
+                            renderActivePomodoros();
+                        }
+                        // Verificar se é hora da pausa longa ou curta
+                        if (pomodorosCompleted % pomodoroConfig.pomodorosBeforeLongBreak === 0) {
+                            startPhase('Long Break');
+                        } else {
+                            startPhase('Short Break');
+                        }
+                    } else {
+                        // Pausa finalizada, permitir iniciar o próximo Pomodoro ou finalizar
+                        if (currentPhase === 'Long Break') {
+                            alert('Pausa longa finalizada! Você pode iniciar a próxima tarefa.');
+                            // Marcar a tarefa como concluída
+                            const pomodoro = activePomodoros.find(p => p.id === currentPomodoro.id);
+                            if (pomodoro) {
+                                const task = tasks.find(t => t.id === pomodoro.taskId);
+                                if (task) {
+                                    task.status = 'Concluída';
+                                    task.pomodorosCompleted = pomodorosCompleted;
+                                }
+                                // Remover Pomodoro da lista
+                                activePomodoros = activePomodoros.filter(p => p.id !== pomodoro.id);
+                                saveActivePomodoros();
+                                saveTasks();
+                                renderTasks();
+                                renderActivePomodoros();
+                            }
+                            resetPomodoroTimer();
+                        } else if (currentPhase === 'Short Break') {
+                            alert('Pausa curta finalizada! Você pode iniciar o próximo Pomodoro.');
+                            // Permitir iniciar o próximo Pomodoro manualmente
+                            resetPomodoroTimer();
+                        }
+                    }
+                } else {
+                    timeLeft--;
+                    updateTimerDisplay();
+                }
+            }, 1000);
+            isRunning = true;
+        }
+
+        function pausePomodoro() {
+            if (isRunning) {
+                clearInterval(timer);
+                isRunning = false;
+                statusDisplay.textContent = 'Status: Pausado';
+            }
+        }
+
+        function resetPomodoroTimer() {
+            clearInterval(timer);
+            isRunning = false;
+            currentPhase = 'Idle';
+            statusDisplay.textContent = 'Status: Inativo';
+            timeLeft = 0;
+            updateTimerDisplay();
+        }
+
+        function resetPomodoro() {
+            if (isRunning) {
+                clearInterval(timer);
+            }
+            isRunning = false;
+            currentPhase = 'Idle';
+            currentPomodoro = null;
+            pomodorosCompleted = 0;
+            timeLeft = 0;
+            updateTimerDisplay();
+            statusDisplay.textContent = 'Status: Inativo';
+            // Resetar status das tarefas em andamento
+            activePomodoros.forEach(pomodoro => {
+                const task = tasks.find(t => t.id === pomodoro.taskId);
+                if (task && pomodoro.pomodorosCompleted < pomodoro.task.pomodoros) {
+                    task.status = 'Pendente';
+                }
+            });
+            // Limpar lista de Pomodoros Ativos
+            activePomodoros = activePomodoros.filter(pomodoro => pomodoro.pomodorosCompleted >= pomodoro.task.pomodoros);
+            saveActivePomodoros();
+            saveTasks();
+            renderTasks();
+            renderActivePomodoros();
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        startBtn.addEventListener('click', startPomodoroManual);
+        pauseBtn.addEventListener('click', pausePomodoro);
+        resetBtn.addEventListener('click', resetPomodoro);
+
+        // Iniciar Pomodoro Manual (sem tarefa específica)
+        function startPomodoroManual() {
+            if (isRunning) {
+                alert('Um Pomodoro já está em andamento. Por favor, pause ou resete o temporizador antes de iniciar outro.');
+                return;
+            }
+            const manualPomodoros = prompt('Quantos Pomodoros deseja iniciar? (Cada Pomodoro = 25 minutos)', '1');
+            const pomodoros = parseInt(manualPomodoros);
+            if (isNaN(pomodoros) || pomodoros < 1) {
+                alert('Número inválido de Pomodoros.');
+                return;
+            }
+            currentPhase = 'Pomodoro';
+            pomodorosCompleted = 0;
+            timeLeft = pomodoroConfig.pomodoroDuration * 60;
+            statusDisplay.textContent = 'Status: Pomodoro';
+            updateTimerDisplay();
+            timer = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    notificationSound.play();
+                    pomodorosCompleted++;
+                    if (pomodorosCompleted < pomodoros) {
+                        if (pomodorosCompleted % pomodoroConfig.pomodorosBeforeLongBreak === 0) {
+                            startPhase('Long Break');
+                        } else {
+                            startPhase('Short Break');
+                        }
+                    } else {
+                        alert('Pomodoros finalizados!');
+                        resetPomodoroTimer();
+                    }
+                } else {
+                    timeLeft--;
+                    updateTimerDisplay();
+                }
+            }, 1000);
+            isRunning = true;
+        }
+
+        // Permitir iniciar Pomodoro a partir do botão da tarefa
+        window.startPomodoro = startPomodoro;
+
+    </script>
+</body>
+</html>
+<!-- preciso fazer algumas alterações nesse código
+
+1- preciso que tenha uma mascara para exibir melhor o tempo, exemplo 60 minutos fique 1h
+
+90 minutos fique 1h e 30 minutos
+
+ou seja a cada 60 minutos ele mostre em horas, pra melhor visualização.
+
+2 - Preciso que na matriz ao inves de eu ter o botão iniciar pomodoro eu tenha um botão adicionar a fila, pois agora quero poder ter uma fila de tarefas onde na primeira tarefa da fila que tenha o botão de adicionar o pomodoro. e quando clicar em iniciar pomodoro ele aparece o botão cancelar pomodoro nessa tarefa, quando a tarefa for finalizada ele fique cinza e inicie a proxima tafera da fila e assim sucessivamente
+
+além disso quando a tarefa for adicionada a fila ele deve sair da matriz, assim como se for removida da fila ela volte para a matriz..
+
+abaixo segue o codigo atual no qual deve ser realizado os ajustes
+
+por fim eu quero que me fornece  o codigo completo com os ajustes solicitados aplicados corretamente em um unico arquivo como está definido nesse codigo que forneci -->

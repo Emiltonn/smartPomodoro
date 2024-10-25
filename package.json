@@ -1,0 +1,10 @@
+{
+  "name": "smartPomodoro",
+  "version": "0.0.1",
+  "description": "Pomodoro with Eisenhower",
+  "main": "index.html",
+  "repository": "git@github.com:Emiltonn/smartPomodoro.git",
+  "author": "e_milton <emanuelnews@outlook.com>",
+  "license": "GNU",
+  "private": false
+}
